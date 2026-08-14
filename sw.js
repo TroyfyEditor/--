@@ -1,5 +1,5 @@
 // Pakeitus failus, pakelk versijos numerį — tada telefonas pasiims naują versiją.
-const CACHE = "minus-plus-v2";
+const CACHE = "minus-plus-v3";
 
 const ASSETS = [
   "./",
