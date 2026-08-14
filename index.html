@@ -20,7 +20,7 @@
 </head>
 <body>
 
-<!-- ============ PRISIJUNGIMAS ============ -->
+<!-- =============== PRISIJUNGIMAS =============== -->
 <section id="login" class="login" hidden>
   <div class="login__inner">
     <p class="eyebrow">Darbo apskaita</p>
@@ -40,79 +40,194 @@
   </div>
 </section>
 
-<!-- ============ PAGRINDINIS EKRANAS ============ -->
+<!-- =============== PAGRINDINIS =============== -->
 <main id="app" class="app" hidden>
 
   <header class="bar">
-    <button class="bar__nav" id="prev-month" aria-label="Ankstesnis mėnuo">‹</button>
-    <h1 class="bar__month" id="month-label">—</h1>
-    <button class="bar__nav" id="next-month" aria-label="Kitas mėnuo">›</button>
-    <button class="bar__out" id="logout" aria-label="Atsijungti">Atsijungti</button>
+    <button class="icon-btn" id="menu-open" aria-label="Meniu">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+    <h1 class="bar__title" id="view-title">Pagrindinis</h1>
+    <button class="icon-btn" id="period-open" aria-label="Pasirinkti laikotarpį">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="3" y="5" width="18" height="16" rx="2"/>
+        <path d="M3 10h18M8 3v4M16 3v4"/>
+      </svg>
+    </button>
   </header>
 
-  <section class="balance">
-    <p class="balance__label">Likutis</p>
-    <p class="balance__figure" id="balance">—</p>
-    <div class="balance__split">
-      <div class="split">
-        <span class="split__label">Pajamos</span>
-        <span class="split__amt split__amt--in" id="sum-income">—</span>
-      </div>
-      <div class="split">
-        <span class="split__label">Išlaidos</span>
-        <span class="split__amt split__amt--out" id="sum-expense">—</span>
-      </div>
+  <p class="period" id="period-label">—</p>
+
+  <!-- trys sumos: tik pagrindiniame -->
+  <section class="totals" id="totals-main">
+    <div class="tot">
+      <span class="tot__label">Pelnas</span>
+      <span class="tot__amt tot__amt--profit" id="t-profit">—</span>
+    </div>
+    <div class="tot">
+      <span class="tot__label">Išlaidos</span>
+      <span class="tot__amt tot__amt--out" id="t-expense">—</span>
+    </div>
+    <div class="tot">
+      <span class="tot__label">Pajamos</span>
+      <span class="tot__amt tot__amt--in" id="t-income">—</span>
     </div>
   </section>
 
-  <section class="ledger" id="ledger" aria-live="polite"></section>
+  <!-- viena suma: pajamų / išlaidų languose -->
+  <section class="totals totals--single" id="totals-single" hidden>
+    <div class="tot">
+      <span class="tot__label" id="t-single-label">Iš viso</span>
+      <span class="tot__amt" id="t-single">—</span>
+    </div>
+  </section>
+
+  <section class="list" id="list" aria-live="polite"></section>
 
   <nav class="dock">
-    <button class="btn btn--out" id="add-expense">Nauja išlaida</button>
-    <button class="btn btn--in"  id="add-income">Naujos pajamos</button>
+    <button class="fab" id="add-open" aria-label="Pridėti įrašą">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
   </nav>
 </main>
 
-<!-- ============ ĮRAŠO FORMA ============ -->
-<div class="sheet" id="sheet" hidden>
-  <div class="sheet__scrim" data-close></div>
-  <div class="sheet__panel" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
-    <div class="sheet__grip"></div>
-    <h2 class="sheet__title" id="sheet-title">Nauja išlaida</h2>
+<!-- =============== MENIU =============== -->
+<div class="drawer" id="drawer" hidden>
+  <div class="drawer__scrim" data-close-drawer></div>
+  <nav class="drawer__panel" aria-label="Skyriai">
+    <p class="drawer__brand">+-$</p>
+    <button class="drawer__item" data-view="main">Pagrindinis</button>
+    <button class="drawer__item" data-view="income">Pajamos</button>
+    <button class="drawer__item" data-view="expense">Išlaidos</button>
+    <button class="drawer__item" data-view="invoices">Sąskaitos</button>
+    <button class="drawer__item" data-view="subs">Prenumeratos</button>
+    <button class="drawer__logout" id="logout">Atsijungti</button>
+  </nav>
+</div>
 
-    <form id="tx-form" class="stack">
+<!-- =============== LAIKOTARPIS =============== -->
+<div class="sheet" id="period-sheet" hidden>
+  <div class="sheet__scrim" data-close-period></div>
+  <div class="sheet__panel" role="dialog" aria-modal="true">
+    <div class="sheet__grip"></div>
+    <h2 class="sheet__title">Laikotarpis</h2>
+    <div class="chips">
+      <button class="chip" data-preset="this-month">Šis mėnuo</button>
+      <button class="chip" data-preset="last-month">Praėjęs mėnuo</button>
+      <button class="chip" data-preset="this-year">Šie metai</button>
+      <button class="chip" data-preset="all">Viskas</button>
+    </div>
+    <div class="row2">
+      <label class="field">
+        <span class="field__label">Nuo</span>
+        <input type="date" id="p-from">
+      </label>
+      <label class="field">
+        <span class="field__label">Iki</span>
+        <input type="date" id="p-to">
+      </label>
+    </div>
+    <button class="btn btn--solid" id="period-apply">Rodyti</button>
+    <button class="btn btn--ghost" data-close-period>Atšaukti</button>
+  </div>
+</div>
+
+<!-- =============== PRIDĖJIMAS =============== -->
+<div class="sheet" id="add-sheet" hidden>
+  <div class="sheet__scrim" data-close-add></div>
+  <div class="sheet__panel" role="dialog" aria-modal="true">
+    <div class="sheet__grip"></div>
+    <h2 class="sheet__title" id="add-title">Naujas įrašas</h2>
+
+    <div class="seg" id="kind-seg">
+      <button class="seg__btn" data-kind="expense">Išlaidos</button>
+      <button class="seg__btn" data-kind="income">Pajamos</button>
+      <button class="seg__btn" data-kind="subscription">Prenumerata</button>
+    </div>
+
+    <form id="entry-form" class="stack" novalidate>
+
       <div class="amount">
         <input type="text" id="f-amount" inputmode="decimal" placeholder="0,00"
-               autocomplete="off" required aria-label="Suma">
+               autocomplete="off" aria-label="Suma">
         <span class="amount__cur">EUR</span>
       </div>
 
       <label class="field">
         <span class="field__label">Data</span>
-        <input type="date" id="f-date" required>
+        <input type="date" id="f-date">
       </label>
 
-      <label class="field">
-        <span class="field__label">Kategorija</span>
-        <select id="f-category"></select>
+      <label class="field" id="w-party">
+        <span class="field__label" id="l-party">Kam sumokėta</span>
+        <input type="text" id="f-party" autocomplete="off" placeholder="pvz. Senukai">
       </label>
 
-      <label class="field">
-        <span class="field__label">Iš ko / kam</span>
-        <input type="text" id="f-vendor" placeholder="pvz. Senukai" autocomplete="off">
+      <label class="field" id="w-name" hidden>
+        <span class="field__label">Prenumeratos pavadinimas</span>
+        <input type="text" id="f-name" autocomplete="off" placeholder="pvz. Adobe">
       </label>
 
-      <label class="field">
-        <span class="field__label">Pastaba</span>
-        <input type="text" id="f-desc" placeholder="neprivaloma" autocomplete="off">
+      <label class="check" id="w-personal" hidden>
+        <input type="checkbox" id="f-personal">
+        <span>Pirkta iš asmeninių pinigų</span>
       </label>
 
-      <p class="note" id="sheet-error" role="alert" hidden></p>
+      <label class="field" id="w-end" hidden>
+        <span class="field__label">Prenumeratos pabaigos data</span>
+        <input type="date" id="f-end">
+      </label>
+
+      <div class="field">
+        <span class="field__label">Sąskaita arba čekis <em>neprivaloma</em></span>
+        <input type="file" id="f-file" accept="image/*,application/pdf" hidden>
+        <button type="button" class="filebox" id="file-pick">
+          <span id="file-name">Nufotografuoti arba pasirinkti</span>
+        </button>
+        <button type="button" class="filedrop" id="file-clear" hidden>Pašalinti failą</button>
+      </div>
+
+      <p class="note" id="add-error" role="alert" hidden></p>
 
       <button type="submit" class="btn btn--solid" id="save-btn">Išsaugoti</button>
-      <button type="button" class="btn btn--ghost" data-close>Atšaukti</button>
-      <button type="button" class="btn btn--danger" id="delete-btn" hidden>Ištrinti įrašą</button>
+      <button type="button" class="btn btn--ghost" data-close-add>Atšaukti</button>
     </form>
+  </div>
+</div>
+
+<!-- =============== ĮRAŠO LANGAS =============== -->
+<div class="sheet" id="detail-sheet" hidden>
+  <div class="sheet__scrim" data-close-detail></div>
+  <div class="sheet__panel" role="dialog" aria-modal="true">
+    <button class="detail__x" data-close-detail aria-label="Uždaryti">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+
+    <p class="detail__date" id="d-date">—</p>
+    <p class="detail__amount" id="d-amount">—</p>
+    <dl class="detail__rows" id="d-rows"></dl>
+    <div id="d-file"></div>
+
+    <div class="detail__confirm" id="d-confirm" hidden>
+      <p>Tikrai ištrinti šį įrašą? Atkurti nebus galima.</p>
+      <div class="row2">
+        <button class="btn btn--ghost" id="d-cancel">Ne, palikti</button>
+        <button class="btn btn--danger" id="d-yes">Taip, ištrinti</button>
+      </div>
+    </div>
+
+    <div class="detail__tools" id="d-tools">
+      <button class="icon-btn" id="d-edit" aria-label="Koreguoti">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4z"/>
+        </svg>
+      </button>
+      <button class="icon-btn icon-btn--danger" id="d-del" aria-label="Ištrinti">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>
+        </svg>
+      </button>
+    </div>
   </div>
 </div>
 
