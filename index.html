@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>-+$</title>
+
+<meta name="theme-color" content="#12110E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="-+$">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+
+<!-- ============ PRISIJUNGIMAS ============ -->
+<section id="login" class="login" hidden>
+  <div class="login__inner">
+    <p class="eyebrow">Darbo apskaita</p>
+    <h1 class="login__title">-+$</h1>
+    <form id="login-form" class="stack">
+      <label class="field">
+        <span class="field__label">El. paštas</span>
+        <input type="email" id="login-email" autocomplete="username" required>
+      </label>
+      <label class="field">
+        <span class="field__label">Slaptažodis</span>
+        <input type="password" id="login-pass" autocomplete="current-password" required>
+      </label>
+      <button type="submit" class="btn btn--solid" id="login-btn">Prisijungti</button>
+      <p class="note" id="login-error" role="alert" hidden></p>
+    </form>
+  </div>
+</section>
+
+<!-- ============ PAGRINDINIS EKRANAS ============ -->
+<main id="app" class="app" hidden>
+
+  <header class="bar">
+    <button class="bar__nav" id="prev-month" aria-label="Ankstesnis mėnuo">‹</button>
+    <h1 class="bar__month" id="month-label">—</h1>
+    <button class="bar__nav" id="next-month" aria-label="Kitas mėnuo">›</button>
+    <button class="bar__out" id="logout" aria-label="Atsijungti">Atsijungti</button>
+  </header>
+
+  <section class="balance">
+    <p class="balance__label">Likutis</p>
+    <p class="balance__figure" id="balance">—</p>
+    <div class="balance__split">
+      <div class="split">
+        <span class="split__label">Pajamos</span>
+        <span class="split__amt split__amt--in" id="sum-income">—</span>
+      </div>
+      <div class="split">
+        <span class="split__label">Išlaidos</span>
+        <span class="split__amt split__amt--out" id="sum-expense">—</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="ledger" id="ledger" aria-live="polite"></section>
+
+  <nav class="dock">
+    <button class="btn btn--out" id="add-expense">Nauja išlaida</button>
+    <button class="btn btn--in"  id="add-income">Naujos pajamos</button>
+  </nav>
+</main>
+
+<!-- ============ ĮRAŠO FORMA ============ -->
+<div class="sheet" id="sheet" hidden>
+  <div class="sheet__scrim" data-close></div>
+  <div class="sheet__panel" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+    <div class="sheet__grip"></div>
+    <h2 class="sheet__title" id="sheet-title">Nauja išlaida</h2>
+
+    <form id="tx-form" class="stack">
+      <div class="amount">
+        <input type="text" id="f-amount" inputmode="decimal" placeholder="0,00"
+               autocomplete="off" required aria-label="Suma">
+        <span class="amount__cur">EUR</span>
+      </div>
+
+      <label class="field">
+        <span class="field__label">Data</span>
+        <input type="date" id="f-date" required>
+      </label>
+
+      <label class="field">
+        <span class="field__label">Kategorija</span>
+        <select id="f-category"></select>
+      </label>
+
+      <label class="field">
+        <span class="field__label">Iš ko / kam</span>
+        <input type="text" id="f-vendor" placeholder="pvz. Senukai" autocomplete="off">
+      </label>
+
+      <label class="field">
+        <span class="field__label">Pastaba</span>
+        <input type="text" id="f-desc" placeholder="neprivaloma" autocomplete="off">
+      </label>
+
+      <p class="note" id="sheet-error" role="alert" hidden></p>
+
+      <button type="submit" class="btn btn--solid" id="save-btn">Išsaugoti</button>
+      <button type="button" class="btn btn--ghost" data-close>Atšaukti</button>
+      <button type="button" class="btn btn--danger" id="delete-btn" hidden>Ištrinti įrašą</button>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="./config.js"></script>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
