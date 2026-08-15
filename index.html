@@ -48,6 +48,11 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
     </button>
     <h1 class="bar__title" id="view-title">Pagrindinis</h1>
+    <button class="icon-btn" id="search-open" aria-label="Paieška">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>
+      </svg>
+    </button>
     <button class="icon-btn" id="period-open" aria-label="Pasirinkti laikotarpį">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <rect x="3" y="5" width="18" height="16" rx="2"/>
@@ -55,6 +60,16 @@
       </svg>
     </button>
   </header>
+
+  <div class="search" id="search-row" hidden>
+    <svg class="search__icon" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>
+    </svg>
+    <input type="search" id="search-input" placeholder="Ieškoti pagal pavadinimą" autocomplete="off">
+    <button class="search__x" id="search-close" aria-label="Baigti paiešką">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
 
   <p class="period" id="period-label">—</p>
 

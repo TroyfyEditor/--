@@ -133,7 +133,7 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor;
 
 .bar {
   position: sticky; top: 0; z-index: 5;
-  display: grid; grid-template-columns: 44px 1fr 44px;
+  display: grid; grid-template-columns: 44px 1fr 44px 44px;
   align-items: center;
   padding: calc(env(safe-area-inset-top) + 0.35rem) 0.5rem 0.35rem;
   background: var(--bg);
@@ -516,3 +516,70 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor;
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* =========================================================
+   BRAUKIMAI
+   ========================================================= */
+
+.swipe { position: relative; overflow: hidden; }
+
+.swipe__hint {
+  position: absolute; top: 0; bottom: 0;
+  display: flex; align-items: center;
+  padding: 0 1.1rem;
+  font-size: 0.78rem; letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0; transition: opacity 0.12s ease;
+  pointer-events: none;
+}
+
+.swipe__hint--edit { left: 0;  color: var(--sand); }
+.swipe__hint--del  { right: 0; color: var(--out); }
+
+.swipe.show-edit .swipe__hint--edit,
+.swipe.show-del  .swipe__hint--del { opacity: 1; }
+
+.swipe .entry {
+  position: relative;
+  background: var(--bg);
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.3, 1);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.swipe.dragging .entry { transition: none; }
+
+
+/* =========================================================
+   PAIEŠKA
+   ========================================================= */
+
+.search {
+  display: flex; align-items: center; gap: 0.55rem;
+  margin: 0.9rem var(--pad) 0;
+  padding: 0 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--rule-firm);
+  border-radius: var(--radius);
+}
+
+.search__icon { flex: none; width: 18px; height: 18px; color: var(--ink-dim); }
+
+.search input {
+  flex: 1; min-width: 0; min-height: 48px;
+  padding: 0; border: none; background: none;
+  font-size: 0.98rem;
+}
+
+.search input:focus { outline: none; }
+.search input::-webkit-search-cancel-button { display: none; }
+
+.search__x {
+  flex: none; display: grid; place-items: center;
+  width: 32px; height: 32px;
+  border: none; background: none; color: var(--ink-soft);
+}
+
+.search__x svg { width: 17px; height: 17px; }

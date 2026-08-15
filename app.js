@@ -12,7 +12,7 @@ if (!cfg.SUPABASE_URL || cfg.SUPABASE_URL.includes("TAVO-PROJEKTAS")) {
 
 const db = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
 const BUCKET = "receipts";
-const APP_VERSION = "1.4";
+const APP_VERSION = "1.6";
 
 /* =========================================================
    PAGALBINĖS
@@ -26,6 +26,10 @@ const MONTHS = ["sausis","vasaris","kovas","balandis","gegužė","birželis",
                 "liepa","rugpjūtis","rugsėjis","spalis","lapkritis","gruodis"];
 
 const money = (n) => eur.format(Number(n) || 0);
+
+// paieškai: "Senukai" ir "senukai", "sąskaita" ir "saskaita" – tas pats
+const norm = (t) => String(t || "").toLowerCase()
+  .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 const iso = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 const today = () => iso(new Date());
 
@@ -65,7 +69,9 @@ const state = {
   removeFile: false,     // ar trinti esamą
   editing: null,         // { kind, row }
   kind: "expense",
-  detail: null
+  detail: null,
+  query: "",
+  periodBefore: null
 };
 
 function thisMonth() {
@@ -204,20 +210,29 @@ function render() {
   $("view-title").textContent = TITLES[state.view];
 
   // prenumeratų lange rodomos visos, todėl laikotarpis ten neaktualus
-  const noPeriod = state.view === "subs";
+  const noPeriod = state.view === "subs" || Boolean(state.query.trim());
   $("period-open").hidden = noPeriod;
   $("period-label").hidden = noPeriod;
 
-  $("period-label").textContent = state.period.from
-    ? (state.period.label || `${state.period.from} – ${state.period.to}`)
-    : "Visas laikotarpis";
+  $("period-label").textContent = state.query.trim()
+    ? "Paieška · visi įrašai"
+    : state.period.from
+      ? (state.period.label || `${state.period.from} – ${state.period.to}`)
+      : "Visas laikotarpis";
 
   document.querySelectorAll(".drawer__item").forEach((b) =>
     b.classList.toggle("is-active", b.dataset.view === state.view));
 
-  const txIn  = state.tx.filter((t) => t.type === "income").map(txItem);
-  const txOut = state.tx.filter((t) => t.type === "expense").map(txItem);
-  const subsBought = state.subs.filter((s) => inPeriod(s.purchase_date)).map(subItem);
+  // paieška: tuščia užklausa nieko nefiltruoja
+  const q = norm(state.query.trim());
+  const hit = (it) => !q
+    || norm(it.title).includes(q)
+    || String(it.amount).includes(q)
+    || it.date.includes(q);
+
+  const txIn  = state.tx.filter((t) => t.type === "income").map(txItem).filter(hit);
+  const txOut = state.tx.filter((t) => t.type === "expense").map(txItem).filter(hit);
+  const subsBought = state.subs.filter((s) => inPeriod(s.purchase_date)).map(subItem).filter(hit);
   const subsWork = subsBought.filter((s) => !s.muted);
 
   const income  = txIn.reduce((s, i) => s + i.amount, 0);
@@ -251,7 +266,7 @@ function render() {
     renderInvoices(list, txIn.filter((i) => i.att));
 
   } else if (state.view === "subs") {
-    const shown = state.subs.map(subItem).sort((a, b) => {
+    const shown = state.subs.map(subItem).filter(hit).sort((a, b) => {
       const pa = daysUntil(a.end) < 0 ? 1 : 0;
       const pb = daysUntil(b.end) < 0 ? 1 : 0;
       if (pa !== pb) return pa - pb;                  // pasibaigusios – į apačią
@@ -262,14 +277,81 @@ function render() {
   }
 }
 
+
+/* =========================================================
+   BRAUKIMAI PER EILUTĘ
+   dešinėn — koreguoti, kairėn — ištrinti
+   ========================================================= */
+
+let suppressClick = false;
+
+function wrapSwipe(row, item) {
+  const wrap = document.createElement("div");
+  wrap.className = "swipe";
+
+  const edit = document.createElement("span");
+  edit.className = "swipe__hint swipe__hint--edit";
+  edit.textContent = "Koreguoti";
+
+  const del = document.createElement("span");
+  del.className = "swipe__hint swipe__hint--del";
+  del.textContent = "Ištrinti";
+
+  wrap.append(edit, del, row);
+
+  let x0 = 0, y0 = 0, dx = 0, lock = null, moved = false;
+
+  wrap.addEventListener("touchstart", (e) => {
+    const t = e.touches[0];
+    x0 = t.clientX; y0 = t.clientY;
+    dx = 0; lock = null; moved = false;
+  }, { passive: true });
+
+  wrap.addEventListener("touchmove", (e) => {
+    const t = e.touches[0];
+    const ax = t.clientX - x0, ay = t.clientY - y0;
+
+    if (lock === null) {
+      if (Math.abs(ax) > 10 || Math.abs(ay) > 10)
+        lock = Math.abs(ax) > Math.abs(ay) * 1.4 ? "x" : "y";
+    }
+    if (lock !== "x") return;
+
+    e.preventDefault();          // kad sąrašas neslinktų kartu
+    moved = true;
+    wrap.classList.add("dragging");
+    dx = Math.max(-140, Math.min(140, ax));
+    row.style.transform = `translateX(${dx}px)`;
+    wrap.classList.toggle("show-edit", dx > 0);
+    wrap.classList.toggle("show-del", dx < 0);
+  }, { passive: false });
+
+  const finish = () => {
+    wrap.classList.remove("dragging", "show-edit", "show-del");
+    row.style.transform = "";
+    if (!moved) return;
+
+    suppressClick = true;
+    setTimeout(() => { suppressClick = false; }, 350);
+
+    if (dx >= 90) openAdd(item);
+    else if (dx <= -90) openDetail(item, true);
+  };
+
+  wrap.addEventListener("touchend", finish);
+  wrap.addEventListener("touchcancel", finish);
+
+  return wrap;
+}
+
 function renderEntries(root, items) {
-  if (!items.length) { root.append(emptyMsg("Šiuo laikotarpiu įrašų nėra.")); return; }
+  if (!items.length) { root.append(emptyMsg(state.query.trim() ? "Nieko nerasta." : "Šiuo laikotarpiu įrašų nėra.")); return; }
 
   for (const it of items) {
     const row = document.createElement("button");
     row.className = "entry";
     row.type = "button";
-    row.addEventListener("click", () => openDetail(it));
+    row.addEventListener("click", () => { if (!suppressClick) openDetail(it); });
 
     const when = document.createElement("span");
     when.className = "entry__when";
@@ -291,12 +373,12 @@ function renderEntries(root, items) {
     amt.textContent = (it.sign === "in" ? "+" : "−") + money(it.amount);
 
     row.append(when, who, amt);
-    root.append(row);
+    root.append(wrapSwipe(row, it));
   }
 }
 
 function renderSubs(root, items) {
-  if (!items.length) { root.append(emptyMsg("Prenumeratų dar nėra.")); return; }
+  if (!items.length) { root.append(emptyMsg(state.query.trim() ? "Nieko nerasta." : "Prenumeratų dar nėra.")); return; }
 
   for (const it of items) {
     const left = daysUntil(it.end);
@@ -306,7 +388,7 @@ function renderSubs(root, items) {
     const row = document.createElement("button");
     row.className = "entry" + (past ? " is-past" : "");
     row.type = "button";
-    row.addEventListener("click", () => openDetail(it));
+    row.addEventListener("click", () => { if (!suppressClick) openDetail(it); });
 
     const when = document.createElement("span");
     when.className = "entry__due entry__due--" + (past ? "past" : soon ? "soon" : "ok");
@@ -333,12 +415,12 @@ function renderSubs(root, items) {
     amt.textContent = money(it.amount);
 
     row.append(when, who, amt);
-    root.append(row);
+    root.append(wrapSwipe(row, it));
   }
 }
 
 async function renderInvoices(root, items) {
-  if (!items.length) { root.append(emptyMsg("Šiuo laikotarpiu sąskaitų nėra.")); return; }
+  if (!items.length) { root.append(emptyMsg(state.query.trim() ? "Nieko nerasta." : "Šiuo laikotarpiu sąskaitų nėra.")); return; }
 
   const grid = document.createElement("div");
   grid.className = "invoices";
@@ -700,10 +782,10 @@ $("entry-form").addEventListener("submit", async (e) => {
    ĮRAŠO LANGAS
    ========================================================= */
 
-async function openDetail(item) {
+async function openDetail(item, askDelete = false) {
   state.detail = item;
-  $("d-confirm").hidden = true;
-  $("d-tools").hidden = false;
+  $("d-confirm").hidden = !askDelete;
+  $("d-tools").hidden = askDelete;
 
   $("d-date").textContent = whenText(item.date, item.created_at);
   $("d-amount").textContent = (item.sign === "in" ? "+" : "−") + money(item.amount);
@@ -807,6 +889,93 @@ $("d-yes").addEventListener("click", async () => {
   $("detail-sheet").hidden = true;
   state.detail = null;
   toast("Ištrinta");
+  refresh();
+});
+
+
+
+/* =========================================================
+   BRAUKIMAI PER PUSLAPĮ
+   nuo kairiojo krašto — meniu
+   kitur dešinėn — grįžti į pagrindinį
+   ant atidaryto meniu kairėn — uždaryti
+   ========================================================= */
+
+(() => {
+  const EDGE = 28;        // kiek pikselių nuo krašto laikoma "kraštu"
+  let x0 = 0, y0 = 0, dx = 0, dy = 0, lock = null, onRow = false;
+
+  const sheetOpen = () =>
+    ["add-sheet", "detail-sheet", "period-sheet"].some((id) => !$(id).hidden);
+
+  document.addEventListener("touchstart", (e) => {
+    const t = e.touches[0];
+    x0 = t.clientX; y0 = t.clientY;
+    dx = 0; dy = 0; lock = null;
+    onRow = Boolean(e.target.closest && e.target.closest(".swipe"));
+  }, { passive: true });
+
+  document.addEventListener("touchmove", (e) => {
+    const t = e.touches[0];
+    dx = t.clientX - x0;
+    dy = t.clientY - y0;
+    if (lock === null && (Math.abs(dx) > 10 || Math.abs(dy) > 10))
+      lock = Math.abs(dx) > Math.abs(dy) * 1.4 ? "x" : "y";
+  }, { passive: true });
+
+  document.addEventListener("touchend", () => {
+    if (lock !== "x" || sheetOpen()) return;
+
+    const drawerOpen = !$("drawer").hidden;
+
+    if (drawerOpen) {
+      if (dx < -55) $("drawer").hidden = true;      // meniu šalin
+      return;
+    }
+
+    if (onRow) return;                              // eilutė turi savo braukimus
+
+    if (x0 <= EDGE && dx > 55) {                    // nuo krašto — meniu
+      $("drawer").hidden = false;
+      return;
+    }
+
+    if (dx > 90 && state.view !== "main") goto("main");
+  }, { passive: true });
+})();
+
+
+/* =========================================================
+   PAIEŠKA
+   Įjungus ieškoma per visus įrašus, laikotarpis atidedamas;
+   užvėrus grįžtama ten, kur buvai.
+   ========================================================= */
+
+let searchDebounce;
+
+$("search-open").addEventListener("click", () => {
+  if (!$("search-row").hidden) { $("search-input").focus(); return; }
+  state.periodBefore = state.period;
+  state.period = { from: null, to: null, label: null };
+  $("search-row").hidden = false;
+  $("search-input").value = "";
+  state.query = "";
+  refresh().then(() => $("search-input").focus());
+});
+
+$("search-input").addEventListener("input", () => {
+  state.query = $("search-input").value;
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(render, 120);
+});
+
+$("search-close").addEventListener("click", () => {
+  $("search-row").hidden = true;
+  $("search-input").value = "";
+  state.query = "";
+  $("period-open").hidden = false;
+  if (state.periodBefore) state.period = state.periodBefore;
+  state.periodBefore = null;
   refresh();
 });
 
