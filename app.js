@@ -12,7 +12,7 @@ if (!cfg.SUPABASE_URL || cfg.SUPABASE_URL.includes("TAVO-PROJEKTAS")) {
 
 const db = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
 const BUCKET = "receipts";
-const APP_VERSION = "1.2";
+const APP_VERSION = "1.3";
 
 /* =========================================================
    PAGALBINĖS
@@ -326,8 +326,10 @@ function renderSubs(root, items) {
       who.append(tag);
     }
 
+    // suma dega taip pat, kaip data: auksu kol galioja, raudonai prieš pabaigą
     const amt = document.createElement("span");
-    amt.className = "entry__amt entry__amt--" + (it.muted || past ? "muted" : "out");
+    amt.className = "entry__amt entry__amt--" +
+      (past ? "muted" : soon ? "out" : "gold");
     amt.textContent = money(it.amount);
 
     row.append(when, who, amt);
