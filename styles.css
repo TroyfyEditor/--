@@ -121,11 +121,8 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor;
 .login { min-height: 100dvh; display: grid; place-items: center; padding: var(--pad); }
 .login__inner { width: min(360px, 100%); }
 
-.login__title {
-  margin: 0.4rem 0 1.75rem;
-  font-family: var(--mono); color: var(--sand);
-  font-size: 2.9rem; font-weight: 500; letter-spacing: -0.04em;
-}
+.login__title { margin: 0.75rem 0 1.9rem; }
+.login__title img { display: block; width: 108px; height: 108px; }
 
 /* ---------- karkasas ---------- */
 
@@ -328,11 +325,8 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor;
   animation: slide 0.22s cubic-bezier(0.2, 0.8, 0.3, 1);
 }
 
-.drawer__brand {
-  margin: 0 0 1.5rem; padding: 0 var(--pad);
-  font-family: var(--mono); font-size: 1.6rem; color: var(--sand);
-  letter-spacing: -0.04em;
-}
+.drawer__brand { margin: 0 0 1.5rem; padding: 0 var(--pad); }
+.drawer__brand img { display: block; width: 52px; height: 52px; }
 
 .drawer__item {
   padding: 0.95rem var(--pad);

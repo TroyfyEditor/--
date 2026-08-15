@@ -12,7 +12,7 @@ if (!cfg.SUPABASE_URL || cfg.SUPABASE_URL.includes("TAVO-PROJEKTAS")) {
 
 const db = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
 const BUCKET = "receipts";
-const APP_VERSION = "1.3";
+const APP_VERSION = "1.4";
 
 /* =========================================================
    PAGALBINĖS

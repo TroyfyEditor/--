@@ -1,5 +1,5 @@
 // Pakeitus failus, pakelk versijos numerį — tada telefonas pasiims naują versiją.
-const CACHE = "minus-plus-v8";
+const CACHE = "minus-plus-v9";
 
 const ASSETS = [
   "./",
@@ -9,6 +9,7 @@ const ASSETS = [
   "./config.js",
   "./manifest.json",
   "./icons/icon-192.png",
+  "./icons/logo.png",
   "./icons/icon-512.png",
   "./icons/apple-touch-icon.png"
 ];
