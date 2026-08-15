@@ -64,14 +64,14 @@
       <span class="tot__label">Pelnas</span>
       <span class="tot__amt tot__amt--profit" id="t-profit">—</span>
     </div>
-    <div class="tot">
+    <button class="tot tot--tap" id="go-expense">
       <span class="tot__label">Išlaidos</span>
       <span class="tot__amt tot__amt--out" id="t-expense">—</span>
-    </div>
-    <div class="tot">
+    </button>
+    <button class="tot tot--tap" id="go-income">
       <span class="tot__label">Pajamos</span>
       <span class="tot__amt tot__amt--in" id="t-income">—</span>
-    </div>
+    </button>
   </section>
 
   <!-- viena suma: pajamų / išlaidų languose -->
@@ -101,7 +101,10 @@
     <button class="drawer__item" data-view="expense">Išlaidos</button>
     <button class="drawer__item" data-view="invoices">Sąskaitos</button>
     <button class="drawer__item" data-view="subs">Prenumeratos</button>
-    <button class="drawer__logout" id="logout">Atsijungti</button>
+    <div class="drawer__foot">
+      <button class="drawer__logout" id="logout">Atsijungti</button>
+      <span class="drawer__ver" id="app-version"></span>
+    </div>
   </nav>
 </div>
 

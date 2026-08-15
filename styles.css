@@ -167,6 +167,13 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor;
 
 .tot { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
 
+.tot--tap {
+  padding: 0; border: none; background: none;
+  text-align: left; align-items: flex-start;
+}
+
+.tot--tap:active { opacity: 0.6; }
+
 .tot__label {
   font-size: 0.66rem; letter-spacing: 0.1em;
   text-transform: uppercase; color: var(--ink-soft);
@@ -243,7 +250,16 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor;
 
 /* prenumeratos eilutė */
 .entry__due { font-family: var(--mono); font-size: 0.68rem; color: var(--ink-soft); }
-.entry__due--soon { color: var(--out); text-shadow: 0 0 12px rgba(242, 105, 92, 0.4); }
+
+/* galioja */
+.entry__due--ok   { color: var(--sand); text-shadow: 0 0 12px rgba(217, 190, 135, 0.35); }
+/* liko savaitė ar mažiau */
+.entry__due--soon { color: var(--out);  text-shadow: 0 0 12px rgba(242, 105, 92, 0.45); }
+/* pasibaigusi */
+.entry__due--past { color: var(--ink-dim); }
+
+.entry.is-past .entry__who { color: var(--ink-dim); }
+.entry.is-past .entry__amt { color: var(--ink-dim); text-shadow: none; }
 
 /* sąskaitų tinklelis */
 .invoices { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; padding: 1rem 0; }
@@ -321,11 +337,20 @@ svg { width: 22px; height: 22px; fill: none; stroke: currentColor;
 .drawer__item.is-active { color: var(--sand); }
 .drawer__item:active { background: var(--raised); }
 
+.drawer__foot {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 1rem; margin-top: auto; padding: 1rem var(--pad) 0;
+}
+
 .drawer__logout {
-  margin-top: auto; padding: 1rem var(--pad) 0;
-  border: none; background: none; text-align: left;
+  padding: 0; border: none; background: none; text-align: left;
   font-size: 0.75rem; letter-spacing: 0.1em;
   text-transform: uppercase; color: var(--ink-dim);
+}
+
+.drawer__ver {
+  font-family: var(--mono); font-size: 0.6rem;
+  letter-spacing: 0.06em; color: var(--ink-dim); opacity: 0.65;
 }
 
 /* ---------- lakštai ---------- */

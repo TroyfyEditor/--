@@ -12,6 +12,7 @@ if (!cfg.SUPABASE_URL || cfg.SUPABASE_URL.includes("TAVO-PROJEKTAS")) {
 
 const db = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
 const BUCKET = "receipts";
+const APP_VERSION = "1.2";
 
 /* =========================================================
    PAGALBINĖS
@@ -93,7 +94,12 @@ $("login-form").addEventListener("submit", async (e) => {
   });
 
   btn.disabled = false; btn.textContent = "Prisijungti";
-  if (error) { err.textContent = "Neteisingas el. paštas arba slaptažodis."; err.hidden = false; }
+  if (error) {
+    err.textContent = /invalid login/i.test(error.message || "")
+      ? "Neteisingas el. paštas arba slaptažodis."
+      : (error.message || "Nepavyko prisijungti.");
+    err.hidden = false;
+  }
 });
 
 $("logout").addEventListener("click", () => db.auth.signOut());
@@ -128,17 +134,14 @@ async function fetchAll() {
     .select("id, name, amount, purchase_date, next_payment_date, is_personal, created_at, attachments(id, storage_path, mime_type, file_name)")
     .order("purchase_date", { ascending: false });
 
-  if (from) {
-    q1 = q1.gte("date", from);
-    // prenumeratos: sąrašuose filtruojam pagal pirkimo datą,
-    // prenumeratų lange — pagal pabaigos datą, todėl imam abu variantus
-    q2 = q2.or(`and(purchase_date.gte.${from},purchase_date.lte.${to}),and(next_payment_date.gte.${from},next_payment_date.lte.${to})`);
-  }
+  // prenumeratų netrumpinam pagal laikotarpį — jų skiltyje turi matytis visos
+  if (from) q1 = q1.gte("date", from);
   if (to) q1 = q1.lte("date", to);
 
   const [r1, r2] = await Promise.all([q1, q2]);
 
-  if (r1.error || r2.error) { toast("Nepavyko įkelti duomenų"); return; }
+  const bad = r1.error || r2.error;
+  if (bad) { toast("Įkėlimas: " + (bad.message || "klaida")); return; }
   state.tx = r1.data || [];
   state.subs = r2.data || [];
 }
@@ -199,6 +202,12 @@ const TITLES = {
 
 function render() {
   $("view-title").textContent = TITLES[state.view];
+
+  // prenumeratų lange rodomos visos, todėl laikotarpis ten neaktualus
+  const noPeriod = state.view === "subs";
+  $("period-open").hidden = noPeriod;
+  $("period-label").hidden = noPeriod;
+
   $("period-label").textContent = state.period.from
     ? (state.period.label || `${state.period.from} – ${state.period.to}`)
     : "Visas laikotarpis";
@@ -242,10 +251,13 @@ function render() {
     renderInvoices(list, txIn.filter((i) => i.att));
 
   } else if (state.view === "subs") {
-    const shown = state.subs
-      .filter((s) => inPeriod(s.next_payment_date))
-      .map(subItem)
-      .sort((a, b) => a.end.localeCompare(b.end));
+    const shown = state.subs.map(subItem).sort((a, b) => {
+      const pa = daysUntil(a.end) < 0 ? 1 : 0;
+      const pb = daysUntil(b.end) < 0 ? 1 : 0;
+      if (pa !== pb) return pa - pb;                  // pasibaigusios – į apačią
+      return pa ? b.end.localeCompare(a.end)          // pasibaigusios: naujausios pirma
+                : a.end.localeCompare(b.end);         // galiojančios: arčiausia pabaiga pirma
+    });
     renderSubs(list, shown);
   }
 }
@@ -284,20 +296,25 @@ function renderEntries(root, items) {
 }
 
 function renderSubs(root, items) {
-  if (!items.length) { root.append(emptyMsg("Šiuo laikotarpiu prenumeratų nesibaigia.")); return; }
+  if (!items.length) { root.append(emptyMsg("Prenumeratų dar nėra.")); return; }
 
   for (const it of items) {
     const left = daysUntil(it.end);
+    const past = left < 0;
+    const soon = !past && left <= 7;
+
     const row = document.createElement("button");
-    row.className = "entry";
+    row.className = "entry" + (past ? " is-past" : "");
     row.type = "button";
     row.addEventListener("click", () => openDetail(it));
 
     const when = document.createElement("span");
-    when.className = "entry__due" + (left <= 7 ? " entry__due--soon" : "");
-    when.textContent = left < 0
+    when.className = "entry__due entry__due--" + (past ? "past" : soon ? "soon" : "ok");
+    when.textContent = past
       ? `baigėsi ${it.end}`
-      : `iki ${it.end} · ${left} d.`;
+      : left === 0
+        ? `baigiasi šiandien · ${it.end}`
+        : `iki ${it.end} · ${left} d.`;
 
     const who = document.createElement("span");
     who.className = "entry__who";
@@ -310,7 +327,7 @@ function renderSubs(root, items) {
     }
 
     const amt = document.createElement("span");
-    amt.className = "entry__amt entry__amt--" + (it.muted ? "muted" : "out");
+    amt.className = "entry__amt entry__amt--" + (it.muted || past ? "muted" : "out");
     amt.textContent = money(it.amount);
 
     row.append(when, who, amt);
@@ -516,9 +533,18 @@ function openAdd(item = null) {
       $("file-clear").hidden = false;
     }
   } else {
-    $("add-title").textContent = "Naujas įrašas";
-    $("kind-seg").hidden = false;
-    setKind("expense");
+    // kiekviename lange pliusas siūlo tik to lango tipą
+    const LOCK = { income: "income", expense: "expense",
+                   subs: "subscription", invoices: "income" };
+    const locked = LOCK[state.view] || null;
+
+    $("add-title").textContent = locked
+      ? { income: "Naujos pajamos", expense: "Nauja išlaida",
+          subscription: "Nauja prenumerata" }[locked]
+      : "Naujas įrašas";
+
+    $("kind-seg").hidden = Boolean(locked);
+    setKind(locked || "expense");
     $("f-amount").value = "";
     $("f-date").value = today();
     $("f-party").value = "";
@@ -531,6 +557,17 @@ function openAdd(item = null) {
 }
 
 $("add-open").addEventListener("click", () => openAdd());
+
+function goto(view) {
+  state.view = view;
+  render();
+  window.scrollTo(0, 0);
+}
+
+$("go-income").addEventListener("click", () => goto("income"));
+$("go-expense").addEventListener("click", () => goto("expense"));
+
+$("app-version").textContent = "v" + APP_VERSION;
 
 document.querySelectorAll("[data-close-add]").forEach((el) =>
   el.addEventListener("click", () => { $("add-sheet").hidden = true; state.editing = null; }));
@@ -646,7 +683,9 @@ $("entry-form").addEventListener("submit", async (e) => {
     refresh();
 
   } catch (ex) {
-    err.textContent = "Nepavyko išsaugoti. Patikrink ryšį ir bandyk dar kartą.";
+    const detail = [ex?.message, ex?.details, ex?.hint, ex?.code]
+      .filter(Boolean).join(" · ");
+    err.textContent = detail || "Nepavyko išsaugoti.";
     err.hidden = false;
     console.error(ex);
   } finally {
@@ -761,7 +800,7 @@ $("d-yes").addEventListener("click", async () => {
   btn.disabled = false;
   btn.textContent = "Taip, ištrinti";
 
-  if (error) { toast("Nepavyko ištrinti"); return; }
+  if (error) { toast("Trynimas: " + (error.message || "klaida")); return; }
 
   $("detail-sheet").hidden = true;
   state.detail = null;
